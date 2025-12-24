@@ -139,6 +139,45 @@
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
+    // --- NOTIFICATION REGISTRATION START ---
+
+// 1. Service Worker-ine background run aakkan register cheyyunnu
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('firebase-messaging-sw.js')
+    .then(function(registration) {
+      console.log('Registration successful! Scope:', registration.scope);
+    }).catch(function(err) {
+      console.log('Service worker registration failed:', err);
+    });
+}
+
+// 2. Messaging Engine initialize cheyyunnu
+const messaging = firebase.messaging();
+
+// 3. Token Kittaanulla Function
+function requestPermission() {
+  Notification.requestPermission().then((permission) => {
+    if (permission === 'granted') {
+      console.log('Notification permission granted.');
+      
+      // VAPID KEY IVIDE KODUKKANAM
+      messaging.getToken({ vapidKey: 'NINTE_FIREBASE_VAPID_KEY_IVIDE_IDUKA' })
+        .then((currentToken) => {
+          if (currentToken) {
+            console.log("Ninte Device Token:", currentToken);
+            // Ii token console-il vannal notification ready aayi.
+          }
+        }).catch((err) => {
+          console.log('Token error:', err);
+        });
+    }
+  });
+}
+
+// Site thurakkumpol permission chodhikkan ithu call cheyyunnu
+requestPermission();
+
+// --- NOTIFICATION REGISTRATION END ---
 
     function sendMessage() {
         const name = document.getElementById('nameInput').value || "ANON";
@@ -169,4 +208,5 @@
 </script>
 
 </body>
+
 </html>
