@@ -1,0 +1,15 @@
+{
+  "short_name": "MatrixChat",
+  "name": "Matrix Terminal Chat",
+  "icons": [
+    {
+      "src": "https://img.icons8.com/matrix/512/matrix.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#000000",
+  "display": "standalone",
+  "theme_color": "#00FF41"
+}
