@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Matrix Chat Terminal</title>
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00FF41">
+    
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
@@ -60,7 +63,7 @@
     }
     setInterval(drawMatrix, 50);
 
-    // 2. Ninte Firebase Config (Corrected)
+    // 2. Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyAuG5oubTBwUKYXp5oYqzQoNpH2YOAKIOU",
         authDomain: "chatbot-a809c.firebaseapp.com",
@@ -75,7 +78,7 @@
     const database = firebase.database();
     const messaging = firebase.messaging();
 
-    // 3. Notification Registration
+    // 3. Service Worker & Notification
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('firebase-messaging-sw.js').then((reg) => {
             Notification.requestPermission().then((permission) => {
@@ -88,7 +91,7 @@
         });
     }
 
-    // 4. Send Message Function (Optimized for Mobile)
+    // 4. Chat Functions
     const sendBtn = document.getElementById('sendBtn');
     const msgInput = document.getElementById('messageInput');
     const nameInput = document.getElementById('nameInput');
@@ -103,7 +106,7 @@
             "message": msg,
             "time": new Date().toLocaleTimeString()
         }).then(() => {
-            msgInput.value = ""; // Clear input after success
+            msgInput.value = "";
         }).catch(e => console.error("Error:", e));
     }
 
@@ -124,3 +127,4 @@
 
 </body>
 </html>
+
