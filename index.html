@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Matrix Chat Terminal</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -14,17 +14,17 @@
             margin: 0; padding: 0; background: black; 
             color: #00FF41; font-family: 'Courier New', monospace;
             overflow: hidden; height: 100vh;
-            touch-action: manipulation;
         }
         #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
-        #chat-container { display: flex; flex-direction: column; height: 100vh; background: rgba(0, 0, 0, 0.8); }
-        #messages { flex: 1; overflow-y: auto; padding: 15px; -webkit-overflow-scrolling: touch; }
-        .msg { margin-bottom: 12px; border-left: 2px solid #00FF41; padding: 5px 10px; word-wrap: break-word; }
-        .input-area { padding: 15px; background: #000; border-top: 1px solid #00FF41; display: flex; gap: 5px; }
-        input { background: #000; border: 1px solid #00FF41; color: #00FF41; padding: 10px; outline: none; font-size: 16px; width: 100%; }
+        #chat-container { display: flex; flex-direction: column; height: 100vh; background: rgba(0, 0, 0, 0.85); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; border-bottom: 1px solid #333; }
+        .msg { margin-bottom: 12px; border-left: 2px solid #00FF41; padding: 5px 10px; word-wrap: break-word; font-size: 14px; }
+        .input-area { padding: 15px; background: #000; display: flex; gap: 8px; align-items: center; }
+        input { background: #111; border: 1px solid #00FF41; color: #00FF41; padding: 12px; outline: none; font-size: 16px; }
         #nameInput { width: 60px; }
         #messageInput { flex: 1; }
-        button { background: #00FF41; color: #000; border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; }
+        button { background: #00FF41; color: #000; border: none; padding: 12px 20px; font-weight: bold; cursor: pointer; border-radius: 4px; }
+        button:active { background: #008f11; }
     </style>
 </head>
 <body>
@@ -35,13 +35,13 @@
     <div id="messages"></div>
     <div class="input-area">
         <input type="text" id="nameInput" placeholder="ID">
-        <input type="text" id="messageInput" placeholder="COMMAND...">
-        <button onclick="sendMessage()">SEND</button>
+        <input type="text" id="messageInput" placeholder="TYPE...">
+        <button id="sendBtn">SEND</button>
     </div>
 </div>
 
 <script>
-    // 1. Matrix Animation
+    // 1. Matrix Background
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth; canvas.height = window.innerHeight;
@@ -60,11 +60,11 @@
     }
     setInterval(drawMatrix, 50);
 
-    // 2. Firebase Config (Mobile Optimized)
+    // 2. Ninte Firebase Config (Corrected)
     const firebaseConfig = {
         apiKey: "AIzaSyAuG5oubTBwUKYXp5oYqzQoNpH2YOAKIOU",
         authDomain: "chatbot-a809c.firebaseapp.com",
-        databaseURL: "https://chatbot-a809c-default-rtdb.firebaseio.com", 
+        databaseURL: "https://chatbot-a809c-default-rtdb.firebaseio.com",
         projectId: "chatbot-a809c",
         storageBucket: "chatbot-a809c.firebasestorage.app",
         messagingSenderId: "875283424596",
@@ -75,42 +75,42 @@
     const database = firebase.database();
     const messaging = firebase.messaging();
 
-    // 3. Service Worker & Notification Fix
+    // 3. Notification Registration
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('firebase-messaging-sw.js')
-            .then((reg) => {
-                console.log('SW Registered');
-                
-                // Permission Request
-                Notification.requestPermission().then((permission) => {
-                    if (permission === 'granted') {
-                        messaging.getToken({ 
-                            vapidKey: 'BD4eSAGpk9MS4Ur22t6geA3lYbvf8ecIE7Du8CpXO2HQvluu_G9_2VU4rWN_N6Z8SIvpU33QULszkNWyVKoZW7U' 
-                        }).then((token) => {
-                            console.log("Token:", token);
-                            // Device token kittiyal mathrame notification ayakkan pattukayullu
-                        }).catch(err => console.log("Token Error:", err));
-                    }
-                });
+        navigator.serviceWorker.register('firebase-messaging-sw.js').then((reg) => {
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    messaging.getToken({ 
+                        vapidKey: 'BD4eSAGpk9MS4Ur22t6geA3lYbvf8ecIE7Du8CpXO2HQvluu_G9_2VU4rWN_N6Z8SIvpU33QULszkNWyVKoZW7U' 
+                    }).then((t) => console.log("Device Token:", t));
+                }
             });
         });
     }
 
-    // 4. Chat Functions
+    // 4. Send Message Function (Optimized for Mobile)
+    const sendBtn = document.getElementById('sendBtn');
+    const msgInput = document.getElementById('messageInput');
+    const nameInput = document.getElementById('nameInput');
+
     function sendMessage() {
-        const name = document.getElementById('nameInput').value || "ANON";
-        const msg = document.getElementById('messageInput').value;
+        const name = nameInput.value || "ANON";
+        const msg = msgInput.value;
         if (msg.trim() === "") return;
         
         database.ref("messages").push().set({
             "sender": name,
             "message": msg,
             "time": new Date().toLocaleTimeString()
-        });
-        document.getElementById('messageInput').value = "";
+        }).then(() => {
+            msgInput.value = ""; // Clear input after success
+        }).catch(e => console.error("Error:", e));
     }
 
+    sendBtn.addEventListener('click', sendMessage);
+    msgInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') sendMessage(); });
+
+    // 5. Sync Messages
     database.ref("messages").limitToLast(20).on("child_added", (snapshot) => {
         const data = snapshot.val();
         const msgDiv = document.getElementById('messages');
@@ -124,4 +124,3 @@
 
 </body>
 </html>
-
