@@ -1,96 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matrix Chat Terminal</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-messaging.js"></script>
     
     <style>
         body { 
-            margin: 0; 
-            padding: 0; 
-            background: black; 
-            color: #00FF41; /* Matrix Green */
-            font-family: 'Courier New', Courier, monospace;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+            margin: 0; padding: 0; background: black; 
+            color: #00FF41; font-family: 'Courier New', monospace;
+            overflow: hidden; height: 100vh;
         }
-
-        /* Matrix Rain Canvas */
-        #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: -1;
-        }
-
-        #chat-container { 
-            width: 90%;
-            max-width: 500px; 
-            height: 85vh;
-            background: rgba(0, 0, 0, 0.85); 
-            border: 2px solid #00FF41;
-            box-shadow: 0 0 20px #00FF41;
-            display: flex; 
-            flex-direction: column; 
-            border-radius: 5px;
-        }
-
-        #messages { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 15px; 
-            scrollbar-width: thin;
-            scrollbar-color: #00FF41 black;
-        }
-
-        .msg { 
-            margin-bottom: 10px; 
-            border-left: 3px solid #00FF41;
-            padding-left: 10px;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .time { font-size: 11px; color: #008F11; margin-left: 10px; }
-
-        .input-area { 
-            padding: 15px; 
-            border-top: 1px solid #00FF41;
-            display: flex; 
-            gap: 5px;
-        }
-
-        input { 
-            background: black;
-            border: 1px solid #00FF41;
-            color: #00FF41;
-            padding: 10px;
-            outline: none;
-            font-family: inherit;
-        }
-
+        #matrix-canvas { position: fixed; top: 0; left: 0; z-index: -1; }
+        #chat-container { display: flex; flex-direction: column; height: 100vh; background: rgba(0, 0, 0, 0.8); }
+        #messages { flex: 1; overflow-y: auto; padding: 15px; }
+        .msg { margin-bottom: 12px; border-left: 2px solid #00FF41; padding: 5px 10px; word-wrap: break-word; }
+        .input-area { padding: 15px; background: #000; border-top: 1px solid #00FF41; display: flex; gap: 5px; }
+        input { background: #000; border: 1px solid #00FF41; color: #00FF41; padding: 10px; outline: none; font-size: 16px; }
         #nameInput { width: 60px; }
         #messageInput { flex: 1; }
-
-        button { 
-            background: #00FF41;
-            color: black;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: inherit;
-        }
-        
-        button:hover { background: #008F11; }
+        button { background: #00FF41; color: #000; border: none; padding: 10px 15px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -101,112 +34,85 @@
     <div id="messages"></div>
     <div class="input-area">
         <input type="text" id="nameInput" placeholder="ID">
-        <input type="text" id="messageInput" placeholder="SYSTEM COMMAND...">
-        <button onclick="sendMessage()">EXECUTE</button>
+        <input type="text" id="messageInput" placeholder="COMMAND...">
+        <button onclick="sendMessage()">SEND</button>
     </div>
 </div>
 
 <script>
-    // --- Matrix Rain Effect ---
+    // 1. Matrix Background Animation
     const canvas = document.getElementById('matrix-canvas');
     const ctx = canvas.getContext('2d');
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$+-*/=%\"'#&_(),.;:?!\\|{}<>[]^~";
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const letters = "01010101ABCDEF";
     const fontSize = 16;
-    const columns = canvas.width / fontSize;
-    const drops = Array(Math.floor(columns)).fill(1);
-
+    const drops = Array(Math.floor(canvas.width / fontSize)).fill(1);
     function drawMatrix() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#00FF41';
-        ctx.font = fontSize + 'px monospace';
-
-        for (let i = 0; i < drops.length; i++) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#00FF41'; ctx.font = fontSize + 'px monospace';
+        drops.forEach((y, i) => {
             const text = letters.charAt(Math.floor(Math.random() * letters.length));
-            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-            if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+            ctx.fillText(text, i * fontSize, y * fontSize);
+            if (y * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
             drops[i]++;
-        }
+        });
     }
-    setInterval(drawMatrix, 35);
+    setInterval(drawMatrix, 50);
 
-    // --- Firebase Logic ---
+    // 2. Firebase Configuration
     const firebaseConfig = {
-        databaseURL: "https://chatbot-a809c-default-rtdb.firebaseio.com"
+        databaseURL: "https://chatbot-a809c-default-rtdb.firebaseio.com/",
+        messagingSenderId: "777421869874"
     };
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    // --- NOTIFICATION REGISTRATION START ---
+    const messaging = firebase.messaging();
 
-// 1. Service Worker-ine background run aakkan register cheyyunnu
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('firebase-messaging-sw.js')
-    .then(function(registration) {
-      console.log('Registration successful! Scope:', registration.scope);
-    }).catch(function(err) {
-      console.log('Service worker registration failed:', err);
-    });
-}
-
-// 2. Messaging Engine initialize cheyyunnu
-const messaging = firebase.messaging();
-
-// 3. Token Kittaanulla Function
-function requestPermission() {
-  Notification.requestPermission().then((permission) => {
-    if (permission === 'granted') {
-      console.log('Notification permission granted.');
-      
-      // VAPID KEY IVIDE KODUKKANAM
-      messaging.getToken({ vapidKey: 'NINTE_FIREBASE_VAPID_KEY_IVIDE_IDUKA' })
-        .then((currentToken) => {
-          if (currentToken) {
-            console.log("Ninte Device Token:", currentToken);
-            // Ii token console-il vannal notification ready aayi.
-          }
-        }).catch((err) => {
-          console.log('Token error:', err);
+    // 3. Service Worker & Notification Setup
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('firebase-messaging-sw.js')
+        .then((reg) => {
+            console.log('Service Worker Registered');
+            
+            // Notification Permission Permission request
+            Notification.requestPermission().then((permission) => {
+                if (permission === 'granted') {
+                    console.log('Permission Granted');
+                    messaging.getToken({ 
+                        vapidKey: 'BD4eSAGpk9MS4Ur22t6geA3lYbvf8ecIE7Du8CpXO2HQvluu_G9_2VU4rWN_N6Z8SIvpU33QULszkNWyVKoZW7U' 
+                    }).then((token) => {
+                        console.log("DEVICE TOKEN:", token);
+                    }).catch((err) => {
+                        console.log("Token Error:", err);
+                    });
+                }
+            });
         });
     }
-  });
-}
 
-// Site thurakkumpol permission chodhikkan ithu call cheyyunnu
-requestPermission();
-
-// --- NOTIFICATION REGISTRATION END ---
-
+    // 4. Chat Functions
     function sendMessage() {
         const name = document.getElementById('nameInput').value || "ANON";
         const msg = document.getElementById('messageInput').value;
-        const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-
         if (msg.trim() === "") return;
-
         database.ref("messages").push().set({
             "sender": name,
             "message": msg,
-            "time": currentTime
+            "time": new Date().toLocaleTimeString()
         });
         document.getElementById('messageInput').value = "";
     }
 
-    document.getElementById('messageInput').onkeydown = (e) => { if(e.key === 'Enter') sendMessage(); };
-
-    database.ref("messages").on("child_added", function(snapshot) {
+    database.ref("messages").limitToLast(20).on("child_added", (snapshot) => {
         const data = snapshot.val();
-        const messagesDiv = document.getElementById('messages');
+        const msgDiv = document.getElementById('messages');
         const newMsg = document.createElement("div");
-        newMsg.classList.add("msg");
-        newMsg.innerHTML = `[${data.time}] <b>${data.sender.toUpperCase()}:</b> > ${data.message}`;
-        messagesDiv.appendChild(newMsg);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight; 
+        newMsg.className = "msg";
+        newMsg.innerHTML = `<b>${data.sender}:</b> ${data.message}`;
+        msgDiv.appendChild(newMsg);
+        msgDiv.scrollTop = msgDiv.scrollHeight;
     });
 </script>
 
 </body>
-
 </html>
